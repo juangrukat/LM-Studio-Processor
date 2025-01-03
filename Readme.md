@@ -5,6 +5,9 @@ The LM Studio File Processor is a Python application designed to streamline the 
 
 Basically, you can use one prompt to process multiple files. This is useful for generating summaries, translations, or other text-based outputs such as YAML, JSON, or metadata, etc.
 
+![LM Studio Processor](https://github.com/user-attachments/assets/3fbc6e2e-70cb-4438-9399-5b403722241e)
+
+
 ## Features
 - **File Processing**: Automatically processes .md and .txt files in a specified folder by sending their content along with a user-defined prompt to an LLM server.
 - **User Configuration**: Users can configure server settings, including the server port and file paths, through a simple GUI.
