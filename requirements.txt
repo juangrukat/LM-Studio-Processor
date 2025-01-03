@@ -1,0 +1,4 @@
+# Add version pins and separate into production and development requirements
+requests==2.31.0
+PySimpleGUI==4.60.5
+python-dotenv==1.0.0  # For environment variable management 
