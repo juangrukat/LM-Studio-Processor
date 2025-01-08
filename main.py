@@ -3,17 +3,33 @@ from config import load_settings, save_settings
 from server import query_llm
 import os
 
-def process_files(server_url, prompt, folder, progress_bar):
-    files = [f for f in os.listdir(folder) if f.endswith(('.md', '.txt'))]
+def get_files_recursive(folder, recursive=False):
+    """Get all .md and .txt files from folder and optionally its subfolders."""
+    files = []
+    if recursive:
+        # Walk through all subdirectories
+        for root, _, filenames in os.walk(folder):
+            for filename in filenames:
+                if filename.endswith(('.md', '.txt')):
+                    # Store full path for processing
+                    files.append(os.path.join(root, filename))
+    else:
+        # Original behavior - only current directory
+        files = [os.path.join(folder, f) for f in os.listdir(folder) 
+                if f.endswith(('.md', '.txt'))]
+    return files
+
+def process_files(server_url, prompt, folder, progress_bar, recursive=False):
+    """Process files with optional recursive search."""
+    files = get_files_recursive(folder, recursive)
     
     if not files:
         print("No .md or .txt files found in the selected folder.")
         return
     
-    for i, file in enumerate(files):
+    for i, file_path in enumerate(files):
         try:
-            file_path = os.path.join(folder, file)
-            print(f"Processing {file}...")
+            print(f"Processing {os.path.basename(file_path)}...")
             
             # Read the file content
             with open(file_path, 'r', encoding='utf-8') as f:
@@ -23,19 +39,22 @@ def process_files(server_url, prompt, folder, progress_bar):
             full_prompt = f"{prompt}\n\nContent:\n{content}"
             
             # Query the LLM
-            llm_response = query_llm(server_url, full_prompt)
+            response = query_llm(server_url, full_prompt)
+            
+            # Extract just the content from the response
+            llm_response = response['choices'][0]['message']['content']
             
             # Write back to the file with simpler format
             with open(file_path, 'w', encoding='utf-8') as f:
                 f.write(f"{llm_response}\n\n{content}")
             
-            print(f"Successfully processed {file}")
+            print(f"Successfully processed {os.path.basename(file_path)}")
             
             # Update progress bar
             progress_bar.UpdateBar((i + 1) / len(files) * 100)
             
         except Exception as e:
-            print(f"Error processing {file}: {str(e)}")
+            print(f"Error processing {os.path.basename(file_path)}: {str(e)}")
             continue
 
 def create_window():
@@ -51,6 +70,7 @@ def create_window():
         [sg.Text("Files Folder:"), 
          sg.Input(settings.get("files_folder", ""), key="files_folder"), 
          sg.FolderBrowse()],
+        [sg.Checkbox("Search Subfolders", default=settings.get("recursive_search", False), key="recursive_search")],
         [sg.Text("Selected Prompt:"), 
          sg.Combo([], key="selected_prompt", size=(40, 1), default_value=settings.get("selected_prompt", ""))],
         [sg.Button("Save Settings"), sg.Button("Refresh Prompts"), sg.Button("Start Processing")],
@@ -94,7 +114,8 @@ def main():
                 "log_prompts": values["log_prompts"],
                 "prompt_folder": values["prompt_folder"],
                 "files_folder": values["files_folder"],
-                "selected_prompt": values["selected_prompt"]  # Save selected prompt
+                "selected_prompt": values["selected_prompt"],
+                "recursive_search": values["recursive_search"]
             }
             save_settings(settings)
             sg.popup("Settings saved successfully!")
@@ -122,9 +143,10 @@ def main():
 
             server_url = f"http://localhost:{values['server_port']}"
             
-            # Save the current prompt selection before processing
+            # Save the current settings before processing
             settings = load_settings()
             settings["selected_prompt"] = values["selected_prompt"]
+            settings["recursive_search"] = values["recursive_search"]
             save_settings(settings)
             
             # Read the selected prompt
@@ -133,7 +155,8 @@ def main():
                 prompt = f.read()
 
             try:
-                process_files(server_url, prompt, values["files_folder"], progress_bar)
+                process_files(server_url, prompt, values["files_folder"], 
+                            progress_bar, values["recursive_search"])
                 sg.popup("Processing complete!")
             except Exception as e:
                 sg.popup_error(f"Error during processing: {str(e)}")

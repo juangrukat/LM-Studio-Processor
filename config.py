@@ -23,7 +23,8 @@ def load_settings():
             "log_prompts": True,
             "prompt_folder": "",
             "files_folder": "",
-            "selected_prompt": ""
+            "selected_prompt": "",
+            "recursive_search": False
         }
 
 def save_settings(settings):
