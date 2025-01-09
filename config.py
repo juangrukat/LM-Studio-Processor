@@ -16,10 +16,12 @@ def load_settings():
             settings = json.load(f)
             # Override with environment variables if they exist
             settings["server_port"] = os.getenv("SERVER_PORT", settings.get("server_port", "1234"))
+            settings["timeout"] = settings.get("timeout", "60")  # Add default timeout
             return settings
     except FileNotFoundError:
         return {
             "server_port": os.getenv("SERVER_PORT", "1234"),
+            "timeout": "60",
             "log_prompts": True,
             "prompt_folder": "",
             "files_folder": "",
