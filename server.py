@@ -1,12 +1,13 @@
 import requests
 
-def query_llm(server_url: str, prompt: str) -> dict:
+def query_llm(server_url: str, prompt: str, timeout: int = 30) -> dict:
     """
     Sends a prompt to the LLM server and returns the response.
     
     Args:
         server_url (str): The URL of the LLM server
         prompt (str): The prompt to send to the LLM
+        timeout (int): Timeout in seconds for the request
         
     Returns:
         dict: The response from the LLM server
@@ -19,7 +20,8 @@ def query_llm(server_url: str, prompt: str) -> dict:
             f"{server_url}/v1/chat/completions",
             json={
                 "messages": [{"role": "user", "content": prompt}]
-            }
+            },
+            timeout=timeout
         )
         response.raise_for_status()
         return response.json()
